@@ -13,10 +13,14 @@ import org.springframework.stereotype.Service;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Random;
+import java.util.*;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * created by cenkc on 8/26/2019
@@ -75,24 +79,26 @@ public class SampleLogGenerator {
         return random.ints(MIN_RANDOM_LAG, MAX_RANDOM_LAG).findFirst().getAsInt();
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws URISyntaxException, IOException {
+        Stream<String> lines = Files.lines(Paths.get("D:\\temp\\hede.json"));
+        lines
+                .map(line -> convertModel(line))
+                .collect(Collectors.groupingBy(lem -> lem.getId(), Collectors.summarizingLong(lem -> lem.getTimestamp())))
+                .entrySet()
+                .stream()
+                .filter(map -> map.getValue().getMax() - map.getValue().getMin() > 4)
+                .collect(Collectors.toMap(map -> map.getKey(), map -> map.getValue()))
+                .forEach((k,v) -> System.out.println(k + "->" + v.getMax() + "-" + v.getMin() + "=" + (v.getMax() - v.getMin())));
+        lines.close();
+    }
+
+    private static LogEventModel convertModel(String line) {
         try {
-            final String arg = args[0];
-            System.out.println(arg);
-
-            Path path = Paths.get("sampleData.json");
-            BufferedWriter bw = Files.newBufferedWriter(path);
-            bw.write("hede hodo" + System.lineSeparator());
-            bw.close();
-
-
-/*
-            ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-            InputStream input = classLoader.getResourceAsStream("sampleData.json");
-            File file = new File()
-*/
+            ObjectMapper objectMapper = new ObjectMapper();
+            return objectMapper.readValue(line, LogEventModel.class);
         } catch (IOException e) {
             e.printStackTrace();
+            return null;
         }
     }
 }

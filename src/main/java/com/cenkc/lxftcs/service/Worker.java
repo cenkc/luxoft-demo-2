@@ -35,8 +35,6 @@ public class Worker implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) throws Exception {
 
-        Thread.sleep(1000L);
-
         if (generateData && Long.parseLong(sampleDataCount) > 0L) {
             logger.info("generating Dummy Data with {} lines", generateData);
             sampleLogGenerator.generate(filePath, Long.parseLong(sampleDataCount));
