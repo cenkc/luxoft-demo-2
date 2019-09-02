@@ -16,6 +16,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Random;
 
 /**
@@ -44,20 +46,28 @@ public class SampleLogGenerator {
 
         try {
             bufferedWriter = Files.newBufferedWriter(path);
+
+            Instant start = Instant.now();
+
             while (dataCount-- > 0) {
                 String id = RandomStringUtils.randomAlphabetic(ID_FIELD_COUNT);
                 long timeStamp = System.currentTimeMillis();
-                LogEventModel lem = new LogEventModel(id, StateEnum.STARTED.name(), APPLICATION_LOG, HOST, timeStamp);
+                String applicationLog = getApplicationLog(dataCount);
+                String host = getHost(dataCount);
+                LogEventModel lem = new LogEventModel(id, StateEnum.STARTED.name(), applicationLog, host, timeStamp);
                 t1 = new Thread(new WriteToFileWorker(lem, bufferedWriter, objectMapper));
                 t1.start();
 
-                lem = new LogEventModel(id, StateEnum.FINISHED.name(), null, null, timeStamp + randomLag());
+                lem = new LogEventModel(id, StateEnum.FINISHED.name(), applicationLog, host, timeStamp + randomLag());
                 t2 = new Thread(new WriteToFileWorker(lem, bufferedWriter, objectMapper));
                 t2.start();
             }
             while(t1.isAlive() || t2.isAlive()) {
                 Thread.sleep(100);
             }
+
+            Instant finish = Instant.now();
+            logger.info("Sample file '{}' generated, duration is : {} ms", filePath, Duration.between(start, finish).toMillis());
         } catch (Exception e) {
             logger.error("Writer error", e);
         } finally {
@@ -71,28 +81,15 @@ public class SampleLogGenerator {
         }
     }
 
-    private int randomLag() {
-        return random.ints(MIN_RANDOM_LAG, MAX_RANDOM_LAG).findFirst().getAsInt();
+    private String getHost(long dataCount) {
+        return (dataCount % 3 == 0 ? HOST : null);
     }
 
-    public static void main(String[] args) {
-        try {
-            final String arg = args[0];
-            System.out.println(arg);
+    private String getApplicationLog(long dataCount) {
+        return (dataCount % 3 == 0 ? APPLICATION_LOG : null);
+    }
 
-            Path path = Paths.get("sampleData.json");
-            BufferedWriter bw = Files.newBufferedWriter(path);
-            bw.write("hede hodo" + System.lineSeparator());
-            bw.close();
-
-
-/*
-            ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-            InputStream input = classLoader.getResourceAsStream("sampleData.json");
-            File file = new File()
-*/
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    private int randomLag() {
+        return random.ints(MIN_RANDOM_LAG, MAX_RANDOM_LAG).findFirst().getAsInt();
     }
 }
