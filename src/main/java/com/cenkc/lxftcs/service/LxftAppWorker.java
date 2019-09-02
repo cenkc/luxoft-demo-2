@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
  * created by cenkc on 8/26/2019
  */
 @Component
-public class Worker implements ApplicationRunner {
+public class LxftAppWorker implements ApplicationRunner {
 
     @Value("${generateData:false}")
     private Boolean generateData;
@@ -24,22 +24,31 @@ public class Worker implements ApplicationRunner {
     @Value("${filePath:sampleData.json}")
     private String filePath;
 
+    @Value("${useSummaryStatistics:false}")
+    private Boolean useSummaryStatistics;
+
     @Autowired
     private SampleLogGenerator sampleLogGenerator;
 
     @Autowired
     private ReadFromFileWorker readFromFileWorker;
 
-    private static final Logger logger = LogManager.getLogger(Worker.class);
+    private static final Logger logger = LogManager.getLogger(LxftAppWorker.class);
 
     @Override
-    public void run(ApplicationArguments args) throws Exception {
+    public void run(ApplicationArguments args) {
 
         if (generateData && Long.parseLong(sampleDataCount) > 0L) {
-            logger.info("generating Dummy Data with {} lines", generateData);
+            logger.info("generating Dummy Data with '{}' lines", generateData);
             sampleLogGenerator.generate(filePath, Long.parseLong(sampleDataCount));
         }
-        logger.info("beginning to process file:{}", filePath);
-        readFromFileWorker.harala(filePath);
+
+        logger.info("beginning to process file:'{}'", filePath);
+
+        if(useSummaryStatistics) {
+            readFromFileWorker.readAsStreamUsingLongSummaryStatistics(filePath);
+        } else {
+            readFromFileWorker.readAsStreamUsingHashMap(filePath);
+        }
     }
 }

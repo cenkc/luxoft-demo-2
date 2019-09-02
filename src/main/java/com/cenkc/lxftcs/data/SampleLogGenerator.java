@@ -13,14 +13,12 @@ import org.springframework.stereotype.Service;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Random;
 
 /**
  * created by cenkc on 8/26/2019
@@ -48,20 +46,28 @@ public class SampleLogGenerator {
 
         try {
             bufferedWriter = Files.newBufferedWriter(path);
+
+            Instant start = Instant.now();
+
             while (dataCount-- > 0) {
                 String id = RandomStringUtils.randomAlphabetic(ID_FIELD_COUNT);
                 long timeStamp = System.currentTimeMillis();
-                LogEventModel lem = new LogEventModel(id, StateEnum.STARTED.name(), APPLICATION_LOG, HOST, timeStamp);
+                String applicationLog = getApplicationLog(dataCount);
+                String host = getHost(dataCount);
+                LogEventModel lem = new LogEventModel(id, StateEnum.STARTED.name(), applicationLog, host, timeStamp);
                 t1 = new Thread(new WriteToFileWorker(lem, bufferedWriter, objectMapper));
                 t1.start();
 
-                lem = new LogEventModel(id, StateEnum.FINISHED.name(), null, null, timeStamp + randomLag());
+                lem = new LogEventModel(id, StateEnum.FINISHED.name(), applicationLog, host, timeStamp + randomLag());
                 t2 = new Thread(new WriteToFileWorker(lem, bufferedWriter, objectMapper));
                 t2.start();
             }
             while(t1.isAlive() || t2.isAlive()) {
                 Thread.sleep(100);
             }
+
+            Instant finish = Instant.now();
+            logger.info("Sample file '{}' generated, duration is : {} ms", filePath, Duration.between(start, finish).toMillis());
         } catch (Exception e) {
             logger.error("Writer error", e);
         } finally {
@@ -75,30 +81,15 @@ public class SampleLogGenerator {
         }
     }
 
+    private String getHost(long dataCount) {
+        return (dataCount % 3 == 0 ? HOST : null);
+    }
+
+    private String getApplicationLog(long dataCount) {
+        return (dataCount % 3 == 0 ? APPLICATION_LOG : null);
+    }
+
     private int randomLag() {
         return random.ints(MIN_RANDOM_LAG, MAX_RANDOM_LAG).findFirst().getAsInt();
-    }
-
-    public static void main(String[] args) throws URISyntaxException, IOException {
-        Stream<String> lines = Files.lines(Paths.get("D:\\temp\\hede.json"));
-        lines
-                .map(line -> convertModel(line))
-                .collect(Collectors.groupingBy(lem -> lem.getId(), Collectors.summarizingLong(lem -> lem.getTimestamp())))
-                .entrySet()
-                .stream()
-                .filter(map -> map.getValue().getMax() - map.getValue().getMin() > 4)
-                .collect(Collectors.toMap(map -> map.getKey(), map -> map.getValue()))
-                .forEach((k,v) -> System.out.println(k + "->" + v.getMax() + "-" + v.getMin() + "=" + (v.getMax() - v.getMin())));
-        lines.close();
-    }
-
-    private static LogEventModel convertModel(String line) {
-        try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            return objectMapper.readValue(line, LogEventModel.class);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
     }
 }
