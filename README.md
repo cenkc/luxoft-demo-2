@@ -1,4 +1,5 @@
 "# luxoft-demo-2" 
+
 mvnw spring-boot:run -Dspring-boot.run.arguments=--generateData=true,--filePath=D:\\temp\\hede.json,--sampleDataCount=10,--useSummaryStatistics=false
 
 --generateData --> Boolean, true if you want to generate a file from scratch, false if you already have a file
