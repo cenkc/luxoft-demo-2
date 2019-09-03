@@ -44,14 +44,14 @@ public class ReadFromFileWorker {
     private static final Logger logger = LogManager.getLogger(ReadFromFileWorker.class);
 
     public void readAsStreamUsingLongSummaryStatistics(String filePath) {
-        Stream<String> lines = null;
-        try {
-            lines = Files
-                    .lines(new File(filePath).toPath());
 
+        /**
+         * Used try-with-resources
+         * https://stackoverflow.com/a/34073306 by Brian Goetz
+         */
+        try (Stream<String> stream = Files.lines(new File(filePath).toPath())){
             Instant start = Instant.now();
-
-            lines //Map<String, LongSummaryStatistics>
+            stream
                     .parallel()
                     .map(str -> convertModel(str))
                     .collect(
@@ -65,15 +65,11 @@ public class ReadFromFileWorker {
                     .forEach(
                             getEntryConsumer()
                     );
-
+            stream.close();
             Instant finish = Instant.now();
             logger.info("All lines processed on file '{}', using LongSummaryStatistics, duration is : {} ms", filePath, Duration.between(start, finish).toMillis());
-        } catch (IOException e) {
+        } catch (Exception e) {
             logger.error("Exception occurred While retrieving file {}", filePath, e);
-        } finally {
-            if (lines != null) {
-                lines.close();
-            }
         }
     }
 
@@ -89,27 +85,24 @@ public class ReadFromFileWorker {
     public void readAsStreamUsingHashMap(String filePath) {
 
         Map<String, LogEventModel> hashMap = new HashMap<>();
-        Stream<String> lines = null;
-        try {
-            lines = Files
-                    .lines(new File(filePath).toPath());
 
+        /**
+         * Used try-with-resources
+         * https://stackoverflow.com/a/34073306 by Brian Goetz
+         */
+        try (Stream<String> stream = Files.lines(new File(filePath).toPath())){
             Instant start = Instant.now();
-
-            lines
+            stream
                     .parallel()
                     .map(str -> convertModel(str))
                     .forEach(
                             getLogEventModelConsumer(hashMap)
                     );
+            stream.close();
             Instant finish = Instant.now();
             logger.info("All lines processed on file '{}', using HashMap, duration is : {} ms", filePath, Duration.between(start, finish).toMillis());
-        } catch (IOException e) {
+        } catch (Exception e) {
             logger.error("Exception occurred While retrieving file {}", filePath, e);
-        } finally {
-            if (lines != null) {
-                lines.close();
-            }
         }
     }
 
