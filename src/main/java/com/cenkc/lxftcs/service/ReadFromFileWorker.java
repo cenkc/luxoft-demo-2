@@ -44,7 +44,6 @@ public class ReadFromFileWorker {
     private static final Logger logger = LogManager.getLogger(ReadFromFileWorker.class);
 
     public void readAsStreamUsingLongSummaryStatistics(String filePath) {
-        Map<String, LogEventModel> hashMap = new HashMap<>();
         Stream<String> lines = null;
         try {
             lines = Files

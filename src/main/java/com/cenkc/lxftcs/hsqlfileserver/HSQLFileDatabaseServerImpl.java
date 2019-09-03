@@ -20,6 +20,7 @@ import java.util.Optional;
 /**
  * created by cenkc on 8/28/2019
  */
+//https://github.com/Springjunky/spring-boot-multi-hsql
 public class HSQLFileDatabaseServerImpl implements HSQLFileDatabaseServer {
 
     private static final Logger logger = LoggerFactory.getLogger(HSQLFileDatabaseServerImpl.class);
@@ -98,7 +99,6 @@ public class HSQLFileDatabaseServerImpl implements HSQLFileDatabaseServer {
         String hostName;
         try {
             hostName = Inet4Address.getLocalHost().getHostName();
-            //hostName = "localhost";
         } catch (Exception ex) {
             hostName = "unknown";
             logger.warn("Your hostname freaks out ", ex);
