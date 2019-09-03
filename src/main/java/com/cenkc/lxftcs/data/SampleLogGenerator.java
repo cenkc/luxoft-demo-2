@@ -68,6 +68,7 @@ public class SampleLogGenerator {
 
             Instant finish = Instant.now();
             logger.info("Sample file '{}' generated, duration is : {} ms", filePath, Duration.between(start, finish).toMillis());
+            bufferedWriter.flush();
         } catch (Exception e) {
             logger.error("Writer error", e);
         } finally {
